@@ -1,1 +1,2 @@
-# my_vimrc
+# vimrc 
+My custom vimrc
