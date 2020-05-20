@@ -25,12 +25,16 @@ Plug 'majutsushi/tagbar'
 Plug 'python-mode/python-mode', { 'for': 'python', 'branch': 'develop' }
 Plug 'davidhalter/jedi-vim'
 Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
 " Plug 'ryanoasis/vim-devicons'
 Plug 'mattn/emmet-vim'
 Plug 'raingo/vim-matlab'
 Plug 'jpalardy/vim-slime'
 Plug 'vimwiki/vimwiki'
-" Plug 'ErichDonGubler/vim-sublime-monokai'
+Plug 'mattn/calendar-vim'
+Plug 'JeroenMulkers/matvim'
+Plug 'ErichDonGubler/vim-sublime-monokai'
+Plug 'jcherven/jummidark.vim'
 
 " Initialize plugin system
 call plug#end()
@@ -43,6 +47,7 @@ call plug#end()
 " ==============================================================
 " COLORSCHEME 
 " colorscheme sublimemonokai 
+colorscheme jummidark 
 " ==============================================================
 
 
@@ -67,6 +72,10 @@ let g:slime_target = "vimterminal"
 " let g:airline_section_z = "\ue0a1:%l/%L Col:%c" "Кастомная графа положения курсора
 " let g:Powerline_symbols='unicode' "Поддержка unicode
 " let g:airline#extensions#xkblayout#enabled = 0 "Про это позже расскажу
+" let g:airline#extensions#tabline#enabled = 1
+let g:airline_theme='violet'
+" let g:airline_right_sep = ""
+" let g:airline_left_sep = ""
 " ==============================================================
 
 
@@ -76,7 +85,6 @@ let g:slime_target = "vimterminal"
 map <C-n> :NERDTreeToggle<CR>
 nmap <F8> :TagbarToggle<CR>
 " ==============================================================
-
 
 " ==============================================================
 " PYMODE
@@ -136,6 +144,40 @@ let g:tex_conceal='abdmg'
 " HTML 
 let g:user_emmet_install_global = 0
 autocmd FileType html,css EmmetInstall
+
+"" Type abbreviation
+"   +-------------------------------------
+"   | html:5_
+"   +-------------------------------------
+""_" is a cursor position. and type "<c-y>," (Ctrl + y and Comma)
+"NOTE: Don't worry about key map. you can change it easily.
+"   +-------------------------------------
+"   | <!DOCTYPE HTML>
+"   | <html lang="en">
+"   | <head>
+"   |     <title></title>
+"   |     <meta charset="UTF-8">
+"   | </head>
+"   | <body>
+"   |      _
+"   | </body>
+"   | </html>
+"   +-------------------------------------
+"Type following
+"   +-------------------------------------
+"   | div#foo$*2>div.bar
+"   +-------------------------------------
+"And type "<c-y>,"
+"   +-------------------------------------
+"   |<div id="foo1">
+"   |    <div class="bar">_</div>
+"   |</div>
+"   |<div id="foo2">
+"   |    <div class="bar"></div>
+"   |</div>
+"   | _
+"   +-------------------------------------
+
 " ==============================================================
 
 
@@ -172,6 +214,25 @@ nnoremap <C-H> <C-W><C-H>
 
 " ==============================================================
 " VIMWIKI
+"
+function! VimwikiLinkConverter(link, source_wiki_file, target_html_file)
+    if a:link =~# '^local:'
+      let link_infos = vimwiki#base#resolve_link(a:link)
+      let html_link = vimwiki#path#relpath(
+                \ fnamemodify(a:source_wiki_file, ':h'), link_infos.filename)
+      let relative_link =
+                \ fnamemodify(a:target_html_file, ':h') . '/' . html_link
+      call system('cp ' . fnameescape(link_infos.filename) .
+                \ ' ' . fnameescape(relative_link))
+      return html_link
+    endif
+    return ''
+endfunction
+" VimwikiLinkConverter("./presentation.pdf",
+"             \ ~/projects/site/main_site_vimwiki/projects/deep_q_learning/car_sim.md,
+"             \ ~/projects/site/html/projects/deep_q_learning/car_sim.html)
+" 
+
 set nocompatible " turn off compatibilities with vi
 filetype plugin on
 syntax on
@@ -188,6 +249,7 @@ let wiki_1.template_path = '~/vimwiki/templates/'
 let wiki_1.nested_syntaxes = {'python': 'python', 'c++': 'cpp'}
 let wiki_1.template_default = 'default'
 let wiki_1.template_ext = '.html'
+" let wiki_1.css_name = '~/vimwiki/css/style.css'
 "
 let wiki_2 = {}
 let wiki_2.path = '~/Diplom/wiki/'
@@ -200,7 +262,26 @@ let wiki_2.nested_syntaxes = {'python': 'python', 'c++': 'cpp'}
 let wiki_2.template_default = 'default'
 let wiki_2.template_ext = '.html'
 
-let g:vimwiki_list = [wiki_1, wiki_2]       
+let wiki_3 = {}
+let wiki_3.path = '~/projects/site/main_site_vimwiki/'
+let wiki_3.syntax = 'default'
+let wiki_3.index = 'index'
+let wiki_3.ext = '.md'
+let wiki_3.path_html = '~/projects/site/html/'
+let wiki_3.template_path = '~/projects/site/main_site_vimwiki/templates/'
+let wiki_3.nested_syntaxes = {'python': 'python', 'c++': 'cpp'}
+let wiki_3.template_default = 'default'
+let wiki_3.template_ext = '.html'
+" let wiki_3.vimwiki_user_htmls = 'test.html'
+" let wiki_3.css_name = '~/vimwiki/css/style.css'
+" let wiki_3.user_htmls = 'test.html'
+
+let g:vimwiki_user_htmls = ''
+let g:vimwiki_list = [wiki_1, wiki_2, wiki_3]       
+let g:vimwiki_use_calendar = 1 
+" let g:vimwiki_user_htmls = 'test.html'
+"
+au BufNewFile ~/vimwiki/diary/*.md :silent 0r !~/.vim/bin/generate-vimwiki-diary-template '%'
 " ==============================================================
 
 
@@ -212,6 +293,8 @@ let g:vimwiki_list = [wiki_1, wiki_2]
 set guioptions= "Отключаем панели прокрутки в GUI
 set showtabline=0 "Отключаем панель табов (окошки FTW)
 set autochdir   "Set auto changing directories
+" CDC = Change to Directory of Current file
+command CDC cd %:p:h
 
 "Сам по себе number показывает справа номера строк
 "relativenumber - нумерацию строк относительно положения курсора
@@ -232,8 +315,8 @@ set textwidth=80 "Где 80 стоит заменить на нужную вам
 "Если вы используете обычный терминальный Вим, а не NeoVim, то...
 "... для изменения курсора в разных режимах используйте это:
 " set ttimeoutlen=10 "Понижаем задержку ввода escape последовательностей
-" let &t_SI.="\e[5 q" "SI = режим вставки
-" let &t_SR.="\e[3 q" "SR = режим замены
+" let &t_SI.="\e[6 q" "SI = режим вставки
+" let &t_SR.="\e[4 q" "SR = режим замены
 " let &t_EI.="\e[1 q" "EI = нормальный режим
 "Где 1 - это мигающий прямоугольник
 "2 - обычный прямоугольник
@@ -241,14 +324,12 @@ set textwidth=80 "Где 80 стоит заменить на нужную вам
 "4 - просто подчёркивание
 "5 - мигающая вертикальная черта
 "6 - просто вертикальная черта
-
 " ==============================================================
-
-
 
 " ==============================================================
 " SPELL
 " setlocal spell
-" set spelllang=nl,en_us
+" set spelllang=en_us
 " inoremap <C-l> <c-g>u<Esc>[s1z=`]a<c-g>u
 " ==============================================================
+
